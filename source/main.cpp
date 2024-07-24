@@ -21,7 +21,7 @@ std::pair<urmem::hook, urmem::address_t> hook;
 #elif __linux__
     bool read_bits(void* ptr, unsigned char* output, int num_to_read, bool align_to_read) {
 #endif
-    int NumberOfUnreadBits = *((unsigned long *)ptr) - *((unsigned long *)ptr + 2);
+    int NumberOfUnreadBits =  *((unsigned long *)ptr + 2) > *((unsigned long *)ptr) ? 0 : *((unsigned long *)ptr) - *((unsigned long *)ptr + 2);
     if(NumberOfUnreadBits < num_to_read) return false;
     return hook.first.call<urmem::calling_convention::thiscall, bool>(ptr, output, num_to_read, align_to_read);
 };
