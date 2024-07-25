@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8...3.15)
-project(scf LANGUAGES C CXX)
+project(scf_patch LANGUAGES C CXX)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 
