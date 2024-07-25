@@ -1,5 +1,6 @@
 #pragma once
 
+#define _FILE_OFFSET_BITS 64
 #include "urmem.hpp"
 #include <subhook.h>
 
