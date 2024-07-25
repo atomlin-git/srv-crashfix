@@ -47,7 +47,7 @@ jobs:
         run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y && choco install yasm -y
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake . -A Win32 && cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -A win32 -T host=x86
 
       - name: Build
         run: cmake --build build --config ${{env.BUILD_TYPE}}
