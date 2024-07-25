@@ -1,0 +1,6 @@
+[submodule "libraries/urmem"]
+	path = libraries/urmem
+	url = https://github.com/katursis/urmem.git
+[submodule "libraries/subhook"]
+	path = libraries/subhook
+	url = https://github.com/Zeex/subhook.git
