@@ -1,38 +1,15 @@
 #include "headers.hpp"
 
-#ifdef _WIN32
-    #define PATTERN "\x8B\xE9\x57\xC1\xE9\x02\x33\xC0\x8B\xFB\xF3\xAB\x8B\xCD"
-    #define MASK    "xxxxxxxxxxxxxx"
-    #define OFFSET  0x28
-    #define CALL __stdcall
-    #define EXTERN extern "C"
-#elif __linux__
-    #define PATTERN "\x0F\xB6\x04\x10\x0F\xB6\x13\xD3\xE0"
-    #define MASK    "xxxxxxxxx"
-    #define OFFSET  0x7B
-    #define CALL
-    #define EXTERN extern "C" __attribute__((visibility("default")))
-#endif
+urmem::sig_scanner scanner;
+urmem::address_t read_bits_offset = 0;
 
-std::pair<urmem::hook, urmem::address_t> hook;
-
-#ifdef _WIN32
-    bool __fastcall read_bits(void* ptr, void* edx, unsigned char* output, int num_to_read, bool align_to_read) {
-#elif __linux__
-    bool read_bits(void* ptr, unsigned char* output, int num_to_read, bool align_to_read) {
-#endif
-    int NumberOfUnreadBits =  *((unsigned long *)ptr + 2) > *((unsigned long *)ptr) ? 0 : *((unsigned long *)ptr) - *((unsigned long *)ptr + 2);
-    if(NumberOfUnreadBits < num_to_read) return false;
-    return hook.first.call<urmem::calling_convention::thiscall, bool>(ptr, output, num_to_read, align_to_read);
-};
-
-EXTERN bool CALL Load(void **ppData)
-{ 
-    urmem::sig_scanner scanner;
-    scanner.init(reinterpret_cast<urmem::address_t>(ppData[0]));
-    if(!scanner.find(PATTERN, MASK, hook.second)) return false;
-    hook.first.install(hook.second - OFFSET, urmem::get_func_addr(&read_bits));
+EXTERN bool CALL Load(void **ppData) {
+    if(!scanner.init(reinterpret_cast<urmem::address_t>(ppData[0]))) return false;
+    if(!scanner.find(READ_BITS, READ_BITS_MASK, read_bits_offset)) return false;
+    
+    urmem::unprotect_memory(read_bits_offset, 1);
+    *(unsigned char*)read_bits_offset = 0x76;
     return true;
-}
+};
 
 EXTERN unsigned int CALL Supports() { return 0x0200 | 0x10000; };
