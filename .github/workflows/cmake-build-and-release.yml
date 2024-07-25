@@ -1,0 +1,95 @@
+name: CMake Build and Release
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  release:
+    types: [created]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build_linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake g++ gcc-multilib g++-multilib libc6-dev libc6-dev-i386 lib32gcc-9-dev lib32stdc++-9-dev
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build
+        run: cmake --build build --config ${{env.BUILD_TYPE}}
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: plugin-scf-linux
+          path: build/*.so
+
+  build_windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build
+        run: cmake --build build --config ${{env.BUILD_TYPE}}
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: plugin-scf-windows
+          path: build/Release/*.dll
+
+  create_release:
+    needs: [build_linux, build_windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get short commit SHA and date
+        id: get_sha_date
+        run: |
+          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "release_date=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: plugin-scf-linux
+          path: ./artifacts/linux
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: plugin-scf-windows
+          path: ./artifacts/windows
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "build_${{ env.release_date }}_${{ env.short_sha }}"
+          name: "Build: ${{ env.release_date }} / ${{ env.short_sha }}"
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/linux/*
+            artifacts/windows/*
+          file_glob: true
+          generate_release_notes: true
