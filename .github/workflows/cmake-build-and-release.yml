@@ -40,9 +40,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install dependencies
-        run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+        run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y && choco install yasm -y
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
